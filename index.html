@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Gas Meter Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="min-h-screen flex">
+        <!-- Sidebar -->
+        <aside class="gradient-bg w-64 text-white p-6 hidden lg:block">
+            <div class="mb-8">
+                <h1 class="text-2xl font-bold">AMR Dashboard</h1>
+            </div>
+            <nav>
+                <ul class="space-y-4">
+                    <li><a href="#" class="flex items-center space-x-2 p-2 rounded hover:bg-blue-700">
+                        <i class="bi bi-house-door"></i><span>Overview</span>
+                    </a></li>
+                    <li><a href="#" class="flex items-center space-x-2 p-2 rounded hover:bg-blue-700">
+                        <i class="bi bi-speedometer2"></i><span>Meters</span>
+                    </a></li>
+                    <li><a href="#" class="flex items-center space-x-2 p-2 rounded hover:bg-blue-700">
+                        <i class="bi bi-broadcast"></i><span>RF Data</span>
+                    </a></li>
+                    <li><a href="#" class="flex items-center space-x-2 p-2 rounded hover:bg-blue-700">
+                        <i class="bi bi-graph-up"></i><span>Analytics</span>
+                    </a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Stats Cards -->
+                <div class="bg-white rounded-lg shadow p-6 card-hover">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500">Total Meters</p>
+                            <h3 class="text-2xl font-bold">1,234</h3>
+                        </div>
+                        <i class="bi bi-device-hdd text-3xl text-blue-600"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-6 card-hover">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500">Active Meters</p>
+                            <h3 class="text-2xl font-bold">1,180</h3>
+                        </div>
+                        <i class="bi bi-lightning-charge text-3xl text-green-600"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-6 card-hover">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500">RF Signal Strength</p>
+                            <h3 class="text-2xl font-bold">33.832 dBm</h3>
+                        </div>
+                        <i class="bi bi-broadcast-pin text-3xl text-yellow-600"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-6 card-hover">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500">Data Collection Rate</p>
+                            <h3 class="text-2xl font-bold">98.5%</h3>
+                        </div>
+                        <i class="bi bi-arrow-up-circle text-3xl text-purple-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RF Data Visualization -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold mb-4">RF Signal Analysis</h3>
+                    <canvas id="rfChart" height="300"></canvas>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold mb-4">Satellite Data</h3>
+                    <canvas id="satelliteChart" height="300"></canvas>
+                </div>
+            </div>
+
+            <!-- Meter Status Table -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">Meter Status Overview</h3>
+                    <button id="refreshBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                        <i class="bi bi-arrow-clockwise mr-2"></i>Refresh
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="bg-gray-50">
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Meter ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Reading</th>
+                            </tr>
+                        </thead>
+                        <tbody id="meterTableBody" class="bg-white divide-y divide-gray-200">
+                            <!-- Table content will be dynamically populated -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // RF Data Chart
+        const rfCtx = document.getElementById('rfChart').getContext('2d');
+        new Chart(rfCtx, {
+            type: 'line',
+            data: {
+                labels: ['1', '2', '3', '4', '5', '6', '7'],
+                datasets: [{
+                    label: 'Signal Strength',
+                    data: [-0.0446777, 0.0441284, 1.03668, 0.8, 0.6, 0.9, 0.7],
+                    borderColor: 'rgb(59, 130, 246)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                }
+            }
+        });
+
+        // Satellite Data Chart
+        const satCtx = document.getElementById('satelliteChart').getContext('2d');
+        new Chart(satCtx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Satellite Coordinates',
+                    data: [
+                        { x: -57.9375, y: -194.437 },
+                        { x: -15.9375, y: 0.0 },
+                        { x: -0.0381098, y: 0.0381098 }
+                    ],
+                    backgroundColor: 'rgb(99, 102, 241)'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                }
+            }
+        });
+
+        // Populate table with sample data
+        function populateTable() {
+            const tbody = document.getElementById('meterTableBody');
+            tbody.innerHTML = ''; // Clear existing content
+
+            const sampleData = [
+                { id: 'GM001', location: 'Block A', status: 'Active', reading: '245.6 m³' },
+                { id: 'GM002', location: 'Block B', status: 'Active', reading: '167.3 m³' },
+                { id: 'GM003', location: 'Block C', status: 'Inactive', reading: '89.1 m³' },
+                { id: 'GM004', location: 'Block D', status: 'Active', reading: '334.8 m³' }
+            ];
+
+            sampleData.forEach(meter => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">${meter.id}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">${meter.location}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            ${meter.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                            ${meter.status}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">${meter.reading}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Initialize table
+        populateTable();
+
+        // Refresh button functionality
+        document.getElementById('refreshBtn').addEventListener('click', () => {
+            populateTable();
+        });
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
